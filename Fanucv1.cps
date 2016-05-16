@@ -42,7 +42,7 @@ properties = {
   writeTools: true, // writes the tools
   preloadTool: true, // preloads next tool on tool change if any
   showSequenceNumbers: true, // show sequence numbers except for the on section method
-  showSequenceNumbersOnSequence: true // show sequence numbers for on section
+  showSequenceNumbersOnSection: true // show sequence numbers for on section
   sequenceNumberStart: 10, // first sequence number
   sequenceNumberIncrement: 5, // increment for sequence numbers
   optionalStop: true, // optional stop
