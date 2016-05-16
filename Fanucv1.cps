@@ -41,7 +41,8 @@ properties = {
   writeMachine: true, // write machine
   writeTools: true, // writes the tools
   preloadTool: true, // preloads next tool on tool change if any
-  showSequenceNumbers: true, // show sequence numbers
+  showSequenceNumbers: true, // show sequence numbers except for the on section method
+  showSequenceNumbersOnSequence: true // show sequence numbers for on section
   sequenceNumberStart: 10, // first sequence number
   sequenceNumberIncrement: 5, // increment for sequence numbers
   optionalStop: true, // optional stop
@@ -110,6 +111,7 @@ var WARNING_WORK_OFFSET = 0;
 
 // collected state
 var sequenceNumber;
+var onSectionSequenceNumber;
 var currentWorkOffset;
 var optionalSection = false;
 var forceSpindleSpeed = false;
@@ -140,6 +142,35 @@ function writeBlock() {
     }
   }
 }
+
+
+/**
+ * writes on block only for
+ */
+
+/**
+ Writes the specified block.
+ */
+function onSectionWriteBlock() {
+  if (properties.showSequenceNumbersOnSection) {
+    if (optionalSection) {
+      var text = formatWords(arguments);
+      if (text) {
+        writeWords("/", "N" + onSectionSequenceNumber, text);
+      }
+    } else {
+      writeWords2("N" + onSectionSequenceNumber, arguments);
+    }
+    sequenceNumber += properties.sequenceNumberIncrement;
+  } else {
+    if (optionalSection) {
+      writeWords2("/", arguments);
+    } else {
+      writeWords(arguments);
+    }
+  }
+}
+
 
 /**
   Writes the specified optional block.
@@ -651,8 +682,8 @@ function onSection() {
     
     // retract to safe plane
     retracted = true;
-    writeBlock(gFormat.format(28), gAbsIncModal.format(91), "Z" + xyzFormat.format(0)); // retract
-    writeBlock(gAbsIncModal.format(90));
+    onSectionWriteBlock(gFormat.format(28), gAbsIncModal.format(91), "Z" + xyzFormat.format(0)); // retract
+    onSectionWriteBlock(gAbsIncModal.format(90));
     forceXYZ();
   
   if (properties.optionalStop) {
@@ -695,7 +726,7 @@ function onSection() {
     }
 
     disableLengthCompensation();
-    writeBlock("T" + toolFormat.format(tool.number), mFormat.format(6));
+    onSectionWriteBlock("T" + toolFormat.format(tool.number), mFormat.format(6));
     if (tool.comment) {
       writeComment(tool.comment);
     }
@@ -719,13 +750,13 @@ function onSection() {
     if (properties.preloadTool) {
       var nextTool = getNextTool(tool.number);
       if (nextTool) {
-        writeBlock("T" + toolFormat.format(nextTool.number));
+        onSectionWriteBlock("T" + toolFormat.format(nextTool.number));
       } else {
         // preload first tool
         var section = getSection(0);
         var firstToolNumber = section.getTool().number;
         if (tool.number != firstToolNumber) {
-          writeBlock("T" + toolFormat.format(firstToolNumber));
+          onSectionWriteBlock("T" + toolFormat.format(firstToolNumber));
         }
       }
     }
@@ -745,13 +776,13 @@ function onSection() {
     if (tool.spindleRPM > 99999) {
       warning(localize("Spindle speed exceeds maximum value."));
     }
-    writeBlock(
+    onSectionWriteBlock(
       sOutput.format(tool.spindleRPM), mFormat.format(tool.clockwise ? 3 : 4)
     );
 
     onCommand(COMMAND_START_CHIP_TRANSPORT);
     if (forceMultiAxisIndexing || !is3D() || machineConfiguration.isMultiAxisConfiguration()) {
-      // writeBlock(mFormat.format(xxx)); // shortest path traverse
+      // onSectionWriteBlock(mFormat.format(xxx)); // shortest path traverse
     }
   }
 
@@ -772,13 +803,13 @@ function onSection() {
         return;
       } else {
         if (workOffset != currentWorkOffset) {
-          writeBlock(gFormat.format(54.1), "P" + p); // G54.1P
+          onSectionWriteBlock(gFormat.format(54.1), "P" + p); // G54.1P
           currentWorkOffset = workOffset;
         }
       }
     } else {
       if (workOffset != currentWorkOffset) {
-        writeBlock(gFormat.format(53 + workOffset)); // G54->G59
+        onSectionWriteBlock(gFormat.format(53 + workOffset)); // G54->G59
         currentWorkOffset = workOffset;
       }
     }
@@ -833,7 +864,7 @@ function onSection() {
   var initialPosition = getFramePosition(currentSection.getInitialPosition());
   if (!retracted) {
     if (getCurrentPosition().z < initialPosition.z) {
-      writeBlock(gMotionModal.format(0), zOutput.format(initialPosition.z));
+      onSectionWriteBlock(gMotionModal.format(0), zOutput.format(initialPosition.z));
     }
   }
 
@@ -845,17 +876,17 @@ function onSection() {
     }
 
     gMotionModal.reset();
-    writeBlock(gPlaneModal.format(17));
+    onSectionWriteBlock(gPlaneModal.format(17));
     
     if (!machineConfiguration.isHeadConfiguration()) {
-      writeBlock(
+      onSectionWriteBlock(
         gAbsIncModal.format(90),
         gMotionModal.format(0), xOutput.format(initialPosition.x), yOutput.format(initialPosition.y)
       );
-      writeBlock(gMotionModal.format(0), gFormat.format(currentSection.isMultiAxis() ? 43.5 : 43), zOutput.format(initialPosition.z), hFormat.format(lengthOffset));
+      onSectionWriteBlock(gMotionModal.format(0), gFormat.format(currentSection.isMultiAxis() ? 43.5 : 43), zOutput.format(initialPosition.z), hFormat.format(lengthOffset));
       lengthCompensationActive = true;
     } else {
-      writeBlock(
+      onSectionWriteBlock(
         gAbsIncModal.format(90),
         gMotionModal.format(0),
         gFormat.format(currentSection.isMultiAxis() ? (machineConfiguration.isMultiAxisConfiguration() ? 43.4 : 43.5) : 43),
@@ -868,7 +899,7 @@ function onSection() {
 
     gMotionModal.reset();
   } else {
-    writeBlock(
+    onSectionWriteBlock(
       gAbsIncModal.format(90),
       gMotionModal.format(0),
       xOutput.format(initialPosition.x),
