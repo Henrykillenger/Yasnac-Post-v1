@@ -42,7 +42,7 @@ properties = {
   writeTools: true, // writes the tools
   preloadTool: true, // preloads next tool on tool change if any
   showSequenceNumbers: true, // show sequence numbers except for the on section method
-  showSequenceNumbersOnSection: true // show sequence numbers for on section
+  showSequenceNumbersOnSection: true, // show sequence numbers for on section
   sequenceNumberStart: 10, // first sequence number
   sequenceNumberIncrement: 5, // increment for sequence numbers
   optionalStop: true, // optional stop
@@ -146,10 +146,7 @@ function writeBlock() {
 
 /**
  * writes on block only for
- */
-
-/**
- Writes the specified block.
+ * Writes the specified block.
  */
 function onSectionWriteBlock() {
   if (properties.showSequenceNumbersOnSection) {
@@ -161,7 +158,7 @@ function onSectionWriteBlock() {
     } else {
       writeWords2("N" + onSectionSequenceNumber, arguments);
     }
-    sequenceNumber += properties.sequenceNumberIncrement;
+    onSectionSequenceNumber += properties.sequenceNumberIncrement;
   } else {
     if (optionalSection) {
       writeWords2("/", arguments);
@@ -224,6 +221,7 @@ function onOpen() {
   }
 
   sequenceNumber = properties.sequenceNumberStart;
+  onSectionSequenceNumber = properties.sequenceNumberStart
   writeln("%");
 
   if (programName) {
